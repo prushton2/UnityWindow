@@ -411,3 +411,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68074a8bfe61c77499531279810afd0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  calibrationDistance: 465
+  calibrationSize: 40000

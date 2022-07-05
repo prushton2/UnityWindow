@@ -18,10 +18,21 @@ public class pipeline : MonoBehaviour
     private NamedPipeClientStream pipeClient;
     private bool isConnected;
     private string temp;
+
+    public float calibrationDistance = 465;   //millimeters
+    public float calibrationSize = 200 * 200; //width * height at the calibration distance
+
+    private HeadPos head;
+
     // Start is called before the first frame update
     void Start()
     {
         Debug.Log("Running");
+
+        head = new HeadPos(0, 0, 0, 0);
+        head.calibrationDistance = calibrationDistance;
+        head.calibrationSize = calibrationSize;
+
 
         pipeClient = new NamedPipeClientStream(".", "FaceRecogServer", PipeDirection.In);
 
@@ -34,6 +45,7 @@ public class pipeline : MonoBehaviour
         sr = new StreamReader(pipeClient);
 
         isConnected = true;
+
     }
 
     // Update is called once per frame
@@ -43,11 +55,17 @@ public class pipeline : MonoBehaviour
         if( temp != null && isConnected ) {
             // Debug.Log("Received from server: "+temp);
             string[] array = temp.Split(",");
-            HeadPos head = new HeadPos(
+
+            head.setNewPos(
                 float.Parse(array[0]),
                 float.Parse(array[1]),
                 float.Parse(array[2]),
                 float.Parse(array[3]));
+
+            // Debug.Log(head.calibrationDistance);
+            // Debug.Log(head.calibrationSize);
+            // Debug.Log(head.getHeadDistance());
+
 
             setNewPosition(head);
 
@@ -83,10 +101,28 @@ class HeadPos {
     public float w;
     public float h;
 
+    public float calibrationDistance;
+    public float calibrationSize;
+
     public HeadPos(float x, float y, float w, float h) {
         this.x = x;
         this.y = y;
         this.w = w;
         this.h = h;
+    }
+
+    public void setNewPos(float x, float y, float w, float h) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;    
+    }
+
+    public float getHeadSize() {
+        return this.w * this.h;
+    }
+
+    public float getHeadDistance() {
+        return (this.calibrationSize / getHeadSize()) * calibrationDistance;
     }
 }

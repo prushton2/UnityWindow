@@ -27,8 +27,8 @@ class PipeServer():
 print("Running")
 capture = cv.VideoCapture(0) #to open Camera
 print("Created capture instance")
+pretrained_model = cv.CascadeClassifier("python/face_detector.xml") 
 #accessing pretrained model
-pretrained_model = cv.CascadeClassifier("face_detector.xml") 
 print("loaded model")
 
 t = PipeServer("FaceRecogServer")
