@@ -17,11 +17,15 @@ public class pipeline : MonoBehaviour
     private StreamReader sr;
     private NamedPipeClientStream pipeClient;
     private bool isConnected;
-    private string temp;
+    
+    public string temp;
+
 
     public float calibrationDistance = 465;   //millimeters
-    public float calibrationSize = 200 * 200; //width * height at the calibration distance
+    public float calibrationWidth = 200;      //width of your head in pixels at the calibration distance
+    public float calibrationHeight = 200;     //height of your head in pixels at the calibration distance
 
+    public float headWidth = 144; //width of your head in mm
     private HeadPos head;
 
     // Start is called before the first frame update
@@ -29,9 +33,13 @@ public class pipeline : MonoBehaviour
     {
         Debug.Log("Running");
 
-        head = new HeadPos(0, 0, 0, 0);
-        head.calibrationDistance = calibrationDistance;
-        head.calibrationSize = calibrationSize;
+        //instantiate head with the globals it needs for math
+        head = new HeadPos(
+            calibrationDistance,
+            calibrationWidth,
+            calibrationHeight,
+            headWidth
+        );
 
 
         pipeClient = new NamedPipeClientStream(".", "FaceRecogServer", PipeDirection.In);
@@ -56,16 +64,13 @@ public class pipeline : MonoBehaviour
             // Debug.Log("Received from server: "+temp);
             string[] array = temp.Split(",");
 
-            head.setNewPos(
+            head.setPos(
                 float.Parse(array[0]),
                 float.Parse(array[1]),
                 float.Parse(array[2]),
                 float.Parse(array[3]));
 
-            // Debug.Log(head.calibrationDistance);
-            // Debug.Log(head.calibrationSize);
-            // Debug.Log(head.getHeadDistance());
-
+            head.getXPosition();
 
             setNewPosition(head);
 
@@ -87,9 +92,9 @@ public class pipeline : MonoBehaviour
         */
 
         transform.position = new Vector3(
-            (headPos.x / 50.0f) - 5.0f,
+            head.getXPosition(),
             (headPos.y / 50.0f) - 6.2f,
-            headPos.w
+            head.getHeadDistance()
         );
 
     }
@@ -103,15 +108,20 @@ class HeadPos {
 
     public float calibrationDistance;
     public float calibrationSize;
+    public float calibrationWidth;
+    public float calibrationHeight;
+    public float headWidth;
 
-    public HeadPos(float x, float y, float w, float h) {
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
+    public HeadPos(float calibrationDistance, float calibrationWidth, float calibrationHeight, float headWidth) {
+        this.calibrationDistance = calibrationDistance;
+        this.calibrationWidth = calibrationWidth;
+        this.calibrationHeight = calibrationHeight;
+        this.headWidth = headWidth;
+
+        this.calibrationSize = calibrationHeight * calibrationWidth;
     }
 
-    public void setNewPos(float x, float y, float w, float h) {
+    public void setPos(float x, float y, float w, float h) {
         this.x = x;
         this.y = y;
         this.w = w;
@@ -124,5 +134,12 @@ class HeadPos {
 
     public float getHeadDistance() {
         return (this.calibrationSize / getHeadSize()) * calibrationDistance;
+    }
+
+    public float getXPosition() {
+        //we measure distance from the center in heads (kinda)
+        float MillsPerPixel =  this.headWidth / this.w; //how many pixels is a mm?
+        float distanceToCenter = (this.x - 250) * MillsPerPixel;
+        return distanceToCenter;
     }
 }
